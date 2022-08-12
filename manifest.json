@@ -1,0 +1,30 @@
+{
+    "manifest_version": 2,
+    "name": "Protonbird (Proton Bridge Integration)",
+    "description": "An extension to help Thunderbird integrate better with Proton Bridge.",
+    "version": "0.0.1",
+    "author": "Sam Wedgwood",
+    "applications": {
+        "gecko": {
+            "id": "protonbird@wedg.dev",
+            "strict_min_version": "102.0",
+            "strict_max_version": "102.*"
+        }
+    },
+    "icons": {},
+    "background": {
+        "page": "background.html"
+    },
+    "options_ui": {
+        "page": "options.html",
+        "open_in_tab": false,
+        "browser_style": true
+    },
+    "permissions": [
+        "accountsRead",
+        "messagesMove",
+        "messagesRead",
+        "messagesTags",
+        "storage"
+    ]
+}
