@@ -64,6 +64,8 @@ async function syncAllLabelsToTags(account) {
     let labelCount = 0;
     let uniqueLabelCount = 0;
 
+    let messageLabelMap = {};
+
     for (let labelFolder of labelsFolder.subFolders) {
         uniqueLabelCount++;
         let label = labelFolder.name;
@@ -80,12 +82,28 @@ async function syncAllLabelsToTags(account) {
 
         for await (let message of messageListGenerator(page)) {
             labelCount++;
-            let queryPage = await messenger.messages.query({ "headerMessageId": message.headerMessageId });
-            for await (let msg of messageListGenerator(queryPage)) {
-                await messenger.messages.update(msg.id, { "tags": msg.tags.concat([labelKey]) });
+
+            let tags = messageLabelMap[message.headerMessageId] || [];
+            tags.push(labelKey);
+            messageLabelMap[message.headerMessageId] = tags;
+        }
+
+    }
+
+    for await (let message of recurseFoldersMessageGenerator(foldersToCheckTags)) {
+        let requiredTags = messageLabelMap[message.headerMessageId];
+        let tagsCorrect = true;
+
+        for (let requiredTag in requiredTags) {
+            if (!message.tags.includes(requiredTag)) {
+                tagsCorrect = false;
+                break;
             }
         }
 
+        if (!tagsCorrect) {
+            await messenger.messages.update(message.id, { "tags": message.tags.concat(requiredTags) });
+        }
     }
 
     let end = new Date().getTime();
