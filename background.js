@@ -1,4 +1,4 @@
-let protonAccounts = ["account1"];
+let protonAccounts;
 
 function hexEncode(str) {
     return str.split("").map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
@@ -38,8 +38,15 @@ async function load() {
 
     let accounts = await messenger.accounts.list();
 
+    let protonAccounts;
+    try {
+        protonAccounts = JSON.parse(window.localStorage.getItem("protonMailAccounts"));
+    } catch {
+        protonAccounts = {};
+    }
+
     for (let account of accounts) {
-        if (protonAccounts.includes(account.id)) {
+        if (protonAccounts[account.id]) {
             await syncAllLabelsToTags(account);
         }
     }
@@ -47,7 +54,7 @@ async function load() {
 }
 
 async function syncAllLabelsToTags(account) {
-    console.info("Syncing all labels to tags");
+    console.info(`Syncing all labels to tags on '${account.id}' ('${account.name}')`);
     let start = new Date().getTime();
 
     let foldersToCheckTags = [];
@@ -59,6 +66,11 @@ async function syncAllLabelsToTags(account) {
         } else {
             foldersToCheckTags.push(folder);
         }
+    }
+
+    if (labelsFolder == undefined) {
+        console.warn(`Sync failed, no 'Labels' folder on account '${account.id}' ('${account.name}')`);
+        return;
     }
 
     let labelCount = 0;
@@ -113,7 +125,7 @@ async function syncAllLabelsToTags(account) {
     let secondsPerUniqueLabel = elapsed / uniqueLabelCount;
 
     console.info(
-        `Synced ${labelCount} labels (${uniqueLabelCount} unique) to tags in ${elapsed.toFixed(3)} second(s). `
+        `Synced ${labelCount} labels (${uniqueLabelCount} unique) to tags in ${elapsed.toFixed(3)} second(s) on '${account.id}' ('${account.name}'). `
         + `${labelsPerSecond.toFixed(3)} labels per second (${secondsPerUniqueLabel.toFixed(3)} seconds per unique label).`
     );
 }
