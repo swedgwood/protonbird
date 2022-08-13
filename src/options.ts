@@ -1,3 +1,5 @@
+declare var messenger: any;
+
 async function load() {
     let selectedAccounts;
     try {
@@ -19,15 +21,16 @@ async function load() {
         checkbox.value = account.id;
         checkbox.checked = selectedAccounts[account.id] || false;
 
-        checkbox.onchange = event => {
+        checkbox.onchange = (event: Event) => {
             let selectedAccounts;
             try {
                 selectedAccounts = JSON.parse(window.localStorage.getItem("protonMailAccounts"));
             } catch {
                 selectedAccounts = {};
             }
-            selectedAccounts[event.target.value] = event.target.checked;
-            console.trace(event.target.value);
+            let checkbox = event.target as HTMLInputElement;
+            selectedAccounts[checkbox.value] = checkbox.checked;
+            console.trace(checkbox.value);
             console.trace(selectedAccounts);
             window.localStorage.setItem("protonMailAccounts", JSON.stringify(selectedAccounts));
         };

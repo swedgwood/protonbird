@@ -1,5 +1,7 @@
 let protonAccounts;
 
+declare var messenger: any;
+
 function hexEncode(str) {
     return str.split("").map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
 }
@@ -33,7 +35,7 @@ async function* recurseFoldersMessageGenerator(folders) {
     }
 }
 
-async function load() {
+async function load1() {
     console.log("Hello!!!!");
 
     let accounts = await messenger.accounts.list();
@@ -130,4 +132,4 @@ async function syncAllLabelsToTags(account) {
     );
 }
 
-document.addEventListener("DOMContentLoaded", load);
+document.addEventListener("DOMContentLoaded", load1);
