@@ -1,16 +1,19 @@
-let protonAccounts;
+import { MailAccount, MailFolder, MessageHeader, MessageList, Messenger } from "./mailextensions";
+import { Config } from "./config";
 
-declare var messenger: any;
+declare var messenger: Messenger;
 
-function hexEncode(str) {
+function hexEncode(str: string): string {
     return str.split("").map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
 }
 
-function generateTagKeyFromLabel(label) {
+// TODO: include account id in this maybe?
+// TODO: also we might want to figure out how to link proton labels to existing tags?
+function generateTagKeyFromLabel(label: string): string {
     return "$protonlabel$" + hexEncode(label);
 }
 
-async function* messageListGenerator(page) {
+async function* messageListGenerator(page: MessageList) {
     for (let message of page.messages) {
         yield message;
     }
@@ -23,10 +26,16 @@ async function* messageListGenerator(page) {
     }
 }
 
-async function* recurseFoldersMessageGenerator(folders) {
+
+
+async function* recurseFoldersMessageGenerator(folders: MailFolder[]) {
+
     for (let folder of folders) {
-        for await (let message of recurseFoldersMessageGenerator(folder.subFolders)) {
-            yield message;
+        if (folder.subFolders !== undefined) {
+            let message: MessageHeader;
+            for await (message of recurseFoldersMessageGenerator(folder.subFolders)) {
+                yield message;
+            }
         }
         let page = await messenger.messages.list(folder);
         for await (let message of messageListGenerator(page)) {
@@ -40,27 +49,28 @@ async function load1() {
 
     let accounts = await messenger.accounts.list();
 
-    let protonAccounts;
-    try {
-        protonAccounts = JSON.parse(window.localStorage.getItem("protonMailAccounts"));
-    } catch {
-        protonAccounts = {};
-    }
+    let protonAccountIds = Config.read().protonAccountIds;
 
     for (let account of accounts) {
-        if (protonAccounts[account.id]) {
+        if (protonAccountIds.includes(account.id)) {
             await syncAllLabelsToTags(account);
         }
     }
 
 }
 
-async function syncAllLabelsToTags(account) {
+async function syncAllLabelsToTags(account: MailAccount) {
     console.info(`Syncing all labels to tags on '${account.id}' ('${account.name}')`);
     let start = new Date().getTime();
 
     let foldersToCheckTags = [];
     let labelsFolder;
+
+    if (account.folders === undefined) {
+        account = messenger.accounts.get(account.id, true);
+    }
+    // .get call above should have .folders populated, so we can cast it safely.
+    account.folders = account.folders as MailFolder[];
 
     for (let folder of account.folders) {
         if (folder.path == "/Labels") {
@@ -78,14 +88,15 @@ async function syncAllLabelsToTags(account) {
     let labelCount = 0;
     let uniqueLabelCount = 0;
 
-    let messageLabelMap = {};
+    // message ID header -> array of tag keys
+    let messageLabelMap: Record<string, string[]> = {};
 
     for (let labelFolder of labelsFolder.subFolders) {
         uniqueLabelCount++;
         let label = labelFolder.name;
         let labelKey = generateTagKeyFromLabel(label);
 
-        let existingTags = (await messenger.messages.listTags()).map(x => x["key"])
+        let existingTags = (await messenger.messages.listTags()).map(x => x.key)
 
         if (!existingTags.includes(labelKey)) {
             await messenger.messages.createTag(labelKey, label, "#6d4aff");
@@ -105,7 +116,7 @@ async function syncAllLabelsToTags(account) {
     }
 
     for await (let message of recurseFoldersMessageGenerator(foldersToCheckTags)) {
-        let requiredTags = messageLabelMap[message.headerMessageId];
+        let requiredTags = messageLabelMap[message.headerMessageId] || [];
         let tagsCorrect = true;
 
         for (let requiredTag in requiredTags) {

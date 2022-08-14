@@ -1,15 +1,13 @@
-declare var messenger: any;
+import { Messenger } from "./mailextensions";
+import { Config } from "./config";
+
+declare var messenger: Messenger;
 
 async function load() {
-    let selectedAccounts;
-    try {
-        selectedAccounts = JSON.parse(window.localStorage.getItem("protonMailAccounts"));
-    } catch {
-        selectedAccounts = {};
-    }
+    let protonMailAccountIds = Config.read().protonAccountIds;
 
     // Set up Proton account selection
-    let accountSelectUL = document.getElementById("accountSelect");
+    let accountSelectUL = document.getElementById("accountSelect") as HTMLElement;
     let accounts = await messenger.accounts.list(false);
 
     for (let account of accounts) {
@@ -19,24 +17,23 @@ async function load() {
         checkbox.id = account.id;
         checkbox.name = account.id;
         checkbox.value = account.id;
-        checkbox.checked = selectedAccounts[account.id] || false;
+        checkbox.checked = protonMailAccountIds.includes(account.id);
 
         checkbox.onchange = (event: Event) => {
-            let selectedAccounts;
-            try {
-                selectedAccounts = JSON.parse(window.localStorage.getItem("protonMailAccounts"));
-            } catch {
-                selectedAccounts = {};
-            }
+            let config = Config.read();
             let checkbox = event.target as HTMLInputElement;
-            selectedAccounts[checkbox.value] = checkbox.checked;
+            if (checkbox.checked) {
+                config.addProtonAccountId(checkbox.value);
+            } else {
+                config.removeProtonAccountId(checkbox.value);
+            }
             console.trace(checkbox.value);
-            console.trace(selectedAccounts);
-            window.localStorage.setItem("protonMailAccounts", JSON.stringify(selectedAccounts));
+            console.trace(config);
+            config.write();
         };
 
         let label = document.createElement("label");
-        label.attributes["for"] = account.id;
+        label.htmlFor = account.id;
         label.innerHTML = account.name
 
         li.appendChild(checkbox);
