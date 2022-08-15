@@ -17,4 +17,4 @@ You can load this as a temporary extension in Thunderbird using [this guide](htt
 
 ### Flatpak notes
 
-If you want to develop using the Flatpak version of Thunderbird, as of writing (13th Aug 2022) you have to use the beta branch to get version 102, and you must manually add access to the `dist` to the permissions of the app.
+If you want to develop using the Flatpak version of Thunderbird, as of writing (13th Aug 2022) you have to use the beta branch to get version 102, and you must manually add access to the `dist` directory to the permissions granted to the app.
