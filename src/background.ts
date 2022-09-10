@@ -49,7 +49,7 @@ async function load1() {
 
     let accounts = await messenger.accounts.list();
 
-    let protonAccountIds = Config.read().protonAccountIds;
+    let protonAccountIds = (await Config.read()).protonAccountIds;
 
     for (let account of accounts) {
         if (protonAccountIds.includes(account.id)) {
@@ -64,7 +64,7 @@ async function syncAllLabelsToTags(account: MailAccount) {
     let start = new Date().getTime();
 
     let foldersToCheckTags = [];
-    let labelsFolder;
+    let labelFolder;
 
     if (account.folders === undefined) {
         account = messenger.accounts.get(account.id, true);
@@ -74,13 +74,13 @@ async function syncAllLabelsToTags(account: MailAccount) {
 
     for (let folder of account.folders) {
         if (folder.path == "/Labels") {
-            labelsFolder = folder;
+            labelFolder = folder;
         } else {
             foldersToCheckTags.push(folder);
         }
     }
 
-    if (labelsFolder == undefined) {
+    if (labelFolder == undefined) {
         console.warn(`Sync failed, no 'Labels' folder on account '${account.id}' ('${account.name}')`);
         return;
     }
@@ -91,9 +91,12 @@ async function syncAllLabelsToTags(account: MailAccount) {
     // message ID header -> array of tag keys
     let messageLabelMap: Record<string, string[]> = {};
 
-    for (let labelFolder of labelsFolder.subFolders) {
+    // safe cast for same reason as above
+    let labelSubFolders = labelFolder.subFolders as MailFolder[];
+
+    for (let labelFolder of labelSubFolders) {
         uniqueLabelCount++;
-        let label = labelFolder.name;
+        let label = labelFolder.name as string;
         let labelKey = generateTagKeyFromLabel(label);
 
         let existingTags = (await messenger.messages.listTags()).map(x => x.key)

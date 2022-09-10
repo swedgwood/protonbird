@@ -6,6 +6,7 @@
 export declare class Messenger {
     accounts: AccountsApi;
     messages: MessagesApi;
+    storage: StorageApi;
 }
 
 export declare class AccountsApi {
@@ -63,4 +64,17 @@ export declare class MessageTag {
     tag: string;
 }
 
-export class MessageChangeProperties { }
+export declare class MessageChangeProperties { }
+
+export declare class StorageApi {
+    local: StorageArea;
+}
+
+export declare class StorageArea {
+    get(keys?: null | string | string[]): Promise<object>;
+    get<T extends Record<string, unknown>>(keys: T): Promise<{ [_ in keyof T]: unknown }>;
+    getBytesInUse(keys?: null | string | string[]): Promise<number>;
+    set(keys: object): Promise<void>;
+    remove(keys: string | string[]): Promise<void>;
+    clear(): Promise<void>;
+}

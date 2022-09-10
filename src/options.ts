@@ -4,7 +4,7 @@ import { Config } from "./config";
 declare var messenger: Messenger;
 
 async function load() {
-    let protonMailAccountIds = Config.read().protonAccountIds;
+    let protonMailAccountIds = (await Config.read()).protonAccountIds;
 
     // Set up Proton account selection
     let accountSelectUL = document.getElementById("accountSelect") as HTMLElement;
@@ -19,18 +19,16 @@ async function load() {
         checkbox.value = account.id;
         checkbox.checked = protonMailAccountIds.includes(account.id);
 
-        checkbox.onchange = (event: Event) => {
-            let config = Config.read();
+        checkbox.addEventListener("change", async (event: Event) => {
+            let config = await Config.read();
             let checkbox = event.target as HTMLInputElement;
             if (checkbox.checked) {
                 config.addProtonAccountId(checkbox.value);
             } else {
                 config.removeProtonAccountId(checkbox.value);
             }
-            console.trace(checkbox.value);
-            console.trace(config);
-            config.write();
-        };
+            await config.write();
+        });
 
         let label = document.createElement("label");
         label.htmlFor = account.id;
